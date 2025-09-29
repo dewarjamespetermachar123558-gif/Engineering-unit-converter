@@ -1,54 +1,52 @@
 import streamlit as st
-
-import streamlit as st
-
-import streamlit as st
+import matplotlib.pyplot as plt
 
 # ------------------ Converter Functions ------------------
 
 def length_converter(value, from_unit, to_unit):
     units = {"m":1, "cm":0.01, "mm":0.001, "in":0.0254, "ft":0.3048}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 def mass_converter(value, from_unit, to_unit):
     units = {"kg":1, "g":0.001, "lb":0.453592, "ton":1000}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 def temperature_converter(value, from_unit, to_unit):
     if from_unit == "C" and to_unit == "K":
-        return value + 273.15
+        result = value + 273.15
     elif from_unit == "K" and to_unit == "C":
-        return value - 273.15
+        result = value - 273.15
     elif from_unit == "C" and to_unit == "F":
-        return (value * 9/5) + 32
+        result = (value * 9/5) + 32
     elif from_unit == "F" and to_unit == "C":
-        return (value - 32) * 5/9
+        result = (value - 32) * 5/9
     elif from_unit == "K" and to_unit == "F":
-        return (value - 273.15) * 9/5 + 32
+        result = (value - 273.15) * 9/5 + 32
     elif from_unit == "F" and to_unit == "K":
-        return (value - 32) * 5/9 + 273.15
+        result = (value - 32) * 5/9 + 273.15
     else:
-        return value
+        result = value
+    return result, None  # No dict for temperature (nonlinear scale)
 
 def force_converter(value, from_unit, to_unit):
     units = {"N":1, "kN":1000, "lbf":4.44822}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 def pressure_converter(value, from_unit, to_unit):
     units = {"Pa":1, "bar":1e5, "atm":101325, "psi":6894.76}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 def energy_converter(value, from_unit, to_unit):
     units = {"J":1, "kJ":1000, "cal":4.184, "kWh":3.6e6, "BTU":1055.06}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 def power_converter(value, from_unit, to_unit):
     units = {"W":1, "kW":1000, "MW":1e6, "hp":745.7}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 def torque_converter(value, from_unit, to_unit):
     units = {"Nm":1, "kNm":1000, "lbft":1.35582}
-    return value * units[from_unit] / units[to_unit]
+    return value * units[from_unit] / units[to_unit], units
 
 
 # ------------------ Streamlit UI ------------------
@@ -65,47 +63,59 @@ quantity = st.selectbox("Choose Quantity Type:",
 # Input value
 value = st.number_input("Enter value to convert:", value=1.0)
 
-# Select units
+# Select units & compute
 if quantity == "Length":
     from_unit = st.selectbox("From Unit", ["m", "cm", "mm", "in", "ft"])
     to_unit = st.selectbox("To Unit", ["m", "cm", "mm", "in", "ft"])
-    result = length_converter(value, from_unit, to_unit)
+    result, units = length_converter(value, from_unit, to_unit)
 
 elif quantity == "Mass":
     from_unit = st.selectbox("From Unit", ["kg", "g", "lb", "ton"])
     to_unit = st.selectbox("To Unit", ["kg", "g", "lb", "ton"])
-    result = mass_converter(value, from_unit, to_unit)
+    result, units = mass_converter(value, from_unit, to_unit)
 
 elif quantity == "Temperature":
     from_unit = st.selectbox("From Unit", ["C", "K", "F"])
     to_unit = st.selectbox("To Unit", ["C", "K", "F"])
-    result = temperature_converter(value, from_unit, to_unit)
+    result, units = temperature_converter(value, from_unit, to_unit)
 
 elif quantity == "Force":
     from_unit = st.selectbox("From Unit", ["N", "kN", "lbf"])
     to_unit = st.selectbox("To Unit", ["N", "kN", "lbf"])
-    result = force_converter(value, from_unit, to_unit)
+    result, units = force_converter(value, from_unit, to_unit)
 
 elif quantity == "Pressure":
     from_unit = st.selectbox("From Unit", ["Pa", "bar", "atm", "psi"])
     to_unit = st.selectbox("To Unit", ["Pa", "bar", "atm", "psi"])
-    result = pressure_converter(value, from_unit, to_unit)
+    result, units = pressure_converter(value, from_unit, to_unit)
 
 elif quantity == "Energy":
     from_unit = st.selectbox("From Unit", ["J", "kJ", "cal", "kWh", "BTU"])
     to_unit = st.selectbox("To Unit", ["J", "kJ", "cal", "kWh", "BTU"])
-    result = energy_converter(value, from_unit, to_unit)
+    result, units = energy_converter(value, from_unit, to_unit)
 
 elif quantity == "Power":
     from_unit = st.selectbox("From Unit", ["W", "kW", "MW", "hp"])
     to_unit = st.selectbox("To Unit", ["W", "kW", "MW", "hp"])
-    result = power_converter(value, from_unit, to_unit)
+    result, units = power_converter(value, from_unit, to_unit)
 
 elif quantity == "Torque":
     from_unit = st.selectbox("From Unit", ["Nm", "kNm", "lbft"])
     to_unit = st.selectbox("To Unit", ["Nm", "kNm", "lbft"])
-    result = torque_converter(value, from_unit, to_unit)
-
+    result, units = torque_converter(value, from_unit, to_unit)
 
 # Display result
 st.success(f"✅ {value} {from_unit} = {result:.3f} {to_unit}")
+
+# ------------------ Visualization ------------------
+if units:  # Only plot if linear units are available
+    st.subheader("📊 Equivalent Values in All Units")
+    all_values = {u: value * units[from_unit] / units[u] for u in units}
+
+    fig, ax = plt.subplots()
+    ax.bar(all_values.keys(), all_values.values(), color="skyblue")
+    ax.set_ylabel("Value")
+    ax.set_title(f"Equivalent of {value} {from_unit} in all units")
+    st.pyplot(fig)
+else:
+    st.info("ℹ️ Visualization not available for Temperature (nonlinear scale).")
